@@ -4,19 +4,19 @@ volumes:
   traefik_data:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/beget/n8n/traefik_data
+      mountpoint: /home/nariman/n8n/traefik_data
   n8n_storage:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/beget/n8n/n8n_storage
+      mountpoint: /home/nariman/n8n/n8n_storage
   db_storage:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/beget/n8n/db_storage
+      mountpoint: /home/nariman/n8n/db_storage
   redis_storage:
     driver: local-persist
     driver_opts:
-      mountpoint: /opt/beget/n8n/redis_storage
+      mountpoint: /home/nariman/n8n/redis_storage
 
 x-shared: &shared
   restart: always
@@ -89,7 +89,7 @@ services:
         context: .
     labels:
       - traefik.enable=true
-      - traefik.http.routers.n8n.rule=Host(`telidinbeg.beget.app`)
+      - traefik.http.routers.n8n.rule=Host(`cloud.alimuradov.ru`)
       - traefik.http.routers.n8n.tls=true
       - traefik.http.routers.n8n.entrypoints=web,websecure
       - traefik.http.routers.n8n.tls.certresolver=mytlschallenge
