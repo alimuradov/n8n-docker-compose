@@ -2,21 +2,33 @@
 
 volumes:
   traefik_data:
-    driver: local-persist
+    driver: local
     driver_opts:
-      mountpoint: /home/nariman/n8n/traefik_data
+      type: none
+      o: bind
+      device: /home/nariman/n8n/traefik_data
+
   n8n_storage:
-    driver: local-persist
+    driver: local
     driver_opts:
-      mountpoint: /home/nariman/n8n/n8n_storage
+      type: none
+      o: bind
+      device: /home/nariman/n8n/n8n_storage
+
   db_storage:
-    driver: local-persist
+    driver: local
     driver_opts:
-      mountpoint: /home/nariman/n8n/db_storage
+      type: none
+      o: bind
+      device: /home/nariman/n8n/db_storage
+
   redis_storage:
-    driver: local-persist
+    driver: local
     driver_opts:
-      mountpoint: /home/nariman/n8n/redis_storage
+      type: none
+      o: bind
+      device: /home/nariman/n8n/redis_storage
+
 
 x-shared: &shared
   restart: always
@@ -56,6 +68,11 @@ services:
     volumes:
       - traefik_data:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+#    environment:
+#      - ALL_PROXY=socks5://10.0.0.1:1080
+#      - http_proxy=socks5://127.0.0.1:1080
+#      - https_proxy=socks5://127.0.0.1:1080
+#      - NO_PROXY=localhost,127.0.0.1,.alimuradov.ru,postgres,redis
 
   postgres:
     image: postgres:11
@@ -109,15 +126,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    environment:
-      EXTRA_NODE_MODULES: "html-to-text,node-telegram-api-bot"
-      NODE_FUNCTION_ALLOW_EXTERNAL: "html-to-text,node-telegram-api-bot"
-      NODE_FUNCTION_ALLOW_BUILTIN: "*"
+
   n8n-worker:
     <<: *shared
     build:
       context: .
     command: worker
+    user: "0"
     depends_on:
       - n8n
     healthcheck:
