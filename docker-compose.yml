@@ -1,38 +1,37 @@
 #version: '3.8'
 
 volumes:
-  traefik_data:
+  caddy_storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nariman/n8n/traefik_data
+      device: ${DATA_FOLDER}/caddy_data
 
   n8n_storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nariman/n8n/n8n_storage
+      device: ${DATA_FOLDER}/n8n_storage
 
   db_storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nariman/n8n/db_storage
+      device: ${DATA_FOLDER}/db_storage
 
   redis_storage:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/nariman/n8n/redis_storage
+      device: ${DATA_FOLDER}/redis_storage
 
 
 x-shared: &shared
   restart: always
-  #image: docker.n8n.io/n8nio/n8n:1.56.2
   env_file: .env
   links:
     - postgres
@@ -47,35 +46,25 @@ x-shared: &shared
       condition: service_healthy
 
 services:
-  traefik:
-    image: traefik:2.10.4
-    restart: always
-    command:
-      - "--api=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-      - "--certificatesresolvers.mytlschallenge.acme.email=tabarigen@mail.ru"
-      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
+  caddy:
+    build:
+      context: .
+      dockerfile: ${DATA_FOLDER}/caddy_config/Dockerfile
+    #image: caddy:latest
+    restart: unless-stopped
+    env_file: .env
+    command: proxychains caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"
     volumes:
-      - traefik_data:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-#    environment:
-#      - ALL_PROXY=socks5://10.0.0.1:1080
-#      - http_proxy=socks5://127.0.0.1:1080
-#      - https_proxy=socks5://127.0.0.1:1080
-#      - NO_PROXY=localhost,127.0.0.1,.alimuradov.ru,postgres,redis
+      - caddy_storage:/data
+      - ${DATA_FOLDER}/caddy_config:/config
+      - ${DATA_FOLDER}/caddy_config/Caddyfile:/etc/caddy/Caddyfile
 
   postgres:
-    image: postgres:11
+    image: postgres:14
     restart: always
     env_file: .env
     volumes:
@@ -106,7 +95,7 @@ services:
         context: .
     labels:
       - traefik.enable=true
-      - traefik.http.routers.n8n.rule=Host(`cloud.alimuradov.ru`)
+      - traefik.http.routers.n8n.rule=Host(`n8n.alimuradov.ru`)
       - traefik.http.routers.n8n.tls=true
       - traefik.http.routers.n8n.entrypoints=web,websecure
       - traefik.http.routers.n8n.tls.certresolver=mytlschallenge
@@ -115,7 +104,7 @@ services:
       - traefik.http.middlewares.n8n.headers.browserXSSFilter=true
       - traefik.http.middlewares.n8n.headers.contentTypeNosniff=true
       - traefik.http.middlewares.n8n.headers.forceSTSHeader=true
-      - traefik.http.middlewares.n8n.headers.SSLHost=telidinbeg.beget.app
+      - traefik.http.middlewares.n8n.headers.SSLHost=n8n.alimuradov.ru
       - traefik.http.middlewares.n8n.headers.STSIncludeSubdomains=true
       - traefik.http.middlewares.n8n.headers.STSPreload=true
       - traefik.http.routers.n8n.middlewares=n8n@docker
@@ -126,6 +115,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      - ${DATA_FOLDER}/local_files:/files
 
   n8n-worker:
     <<: *shared

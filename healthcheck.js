@@ -5,7 +5,7 @@ var options = {
   port: 5678,
   path: '/',
   method: 'GET',
-  headers: {'Host': 'telidinbeg.beget.app', 'Accept': '*/*'},
+  headers: {'Host': 'n8n.alimuradov.ru', 'Accept': '*/*'},
 };
 
 var req = https.request(options, function(res) {
