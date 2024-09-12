@@ -47,13 +47,8 @@ x-shared: &shared
 
 services:
   caddy:
-    build:
-      context: .
-      dockerfile: ${DATA_FOLDER}/caddy_config/Dockerfile
-    #image: caddy:latest
+    image: caddy:latest
     restart: unless-stopped
-    env_file: .env
-    command: proxychains caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
     ports:
       - "80:80"
       - "443:443"
